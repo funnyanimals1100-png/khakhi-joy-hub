@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Newspaper } from "lucide-react";
+import { Newspaper, Sparkles, AlertCircle } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
 
@@ -17,20 +17,24 @@ export const Route = createFileRoute("/news")({
 type News = {
   id: string;
   title: string;
+  title_en?: string | null;
+  summary?: string | null;
   content?: string | null;
   category?: string | null;
-  image_url?: string | null;
-  created_at?: string;
+  exam_type?: string | null;
+  is_important?: boolean | null;
+  is_new?: boolean | null;
+  published_date?: string | null;
 };
 
 function NewsPage() {
   const { data, isLoading } = useQuery({
-    queryKey: ["news", "general"],
+    queryKey: ["news", "all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("news")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("published_date", { ascending: false });
       if (error) throw error;
       return data as News[];
     },
@@ -48,20 +52,34 @@ function NewsPage() {
           </div>
         )}
         {data?.map((n) => (
-          <article key={n.id} className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
-            {n.image_url && (
-              <img src={n.image_url} alt={n.title} className="w-full h-48 object-cover" loading="lazy" />
-            )}
-            <div className="p-5">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {n.category && (
-                  <span className="font-medium text-[var(--khakhi-saffron-deep)] uppercase">{n.category}</span>
-                )}
-                {n.created_at && <span>· {new Date(n.created_at).toLocaleDateString()}</span>}
-              </div>
-              <h2 className="mt-2 text-xl font-semibold">{n.title}</h2>
-              {n.content && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-4">{n.content}</p>}
+          <article key={n.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+              {n.category && (
+                <span className="font-semibold text-[var(--khakhi-saffron-deep)] uppercase">{n.category}</span>
+              )}
+              {n.exam_type && (
+                <span className="text-white bg-[var(--khakhi-navy)] px-2 py-0.5 rounded">{n.exam_type}</span>
+              )}
+              {n.is_important && (
+                <span className="inline-flex items-center gap-1 text-destructive font-medium">
+                  <AlertCircle className="h-3 w-3" /> Important
+                </span>
+              )}
+              {n.is_new && (
+                <span className="inline-flex items-center gap-1 text-[var(--khakhi-saffron-deep)] font-medium">
+                  <Sparkles className="h-3 w-3" /> New
+                </span>
+              )}
+              {n.published_date && <span>· {new Date(n.published_date).toLocaleDateString()}</span>}
             </div>
+            <h2 className="mt-2 text-xl font-semibold">{n.title}</h2>
+            {n.title_en && n.title_en !== n.title && (
+              <p className="text-sm text-muted-foreground italic mt-0.5">{n.title_en}</p>
+            )}
+            {n.summary && <p className="mt-2 text-sm font-medium">{n.summary}</p>}
+            {n.content && (
+              <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-5">{n.content}</p>
+            )}
           </article>
         ))}
       </div>

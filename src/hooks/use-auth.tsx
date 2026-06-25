@@ -5,9 +5,11 @@ import { supabase, ADMIN_EMAIL } from "@/lib/supabase";
 type Profile = {
   id: string;
   email?: string | null;
-  full_name?: string | null;
+  name?: string | null;
+  exam_type?: string | null;
+  avatar_url?: string | null;
   is_admin?: boolean | null;
-  [key: string]: unknown;
+  created_at?: string | null;
 };
 
 type AuthCtx = {
@@ -17,7 +19,7 @@ type AuthCtx = {
   loading: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -68,13 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     },
-    signUp: async (email, password, fullName) => {
+    signUp: async (email, password, name) => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-          data: { full_name: fullName },
+          data: { name },
         },
       });
       if (error) throw error;

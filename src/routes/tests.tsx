@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardCheck, Clock, TrendingUp } from "lucide-react";
+import { ClipboardCheck, Clock, TrendingUp, Lock } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,18 +17,24 @@ export const Route = createFileRoute("/tests")({
 
 type MockTest = {
   id: string;
-  title: string;
+  name: string;
   description?: string | null;
+  exam_type?: string | null;
   duration_minutes?: number | null;
   total_questions?: number | null;
-  category?: string | null;
+  difficulty?: string | null;
+  subjects?: string[] | null;
+  is_premium?: boolean | null;
+  is_active?: boolean | null;
 };
 type TestResult = {
   id: string;
-  test_id: string;
+  user_id: string;
+  mock_test_id: string;
   score?: number | null;
-  total?: number | null;
-  created_at?: string;
+  total_questions?: number | null;
+  time_taken_seconds?: number | null;
+  completed_at?: string | null;
 };
 
 function TestsPage() {
@@ -40,7 +46,8 @@ function TestsPage() {
       const { data, error } = await supabase
         .from("mock_tests")
         .select("*")
-        .order("created_at", { ascending: false });
+        .eq("is_active", true)
+        .order("name", { ascending: true });
       if (error) throw error;
       return data as MockTest[];
     },
@@ -54,15 +61,16 @@ function TestsPage() {
         .from("test_results")
         .select("*")
         .eq("user_id", user!.id)
-        .order("created_at", { ascending: false });
+        .order("completed_at", { ascending: false });
       if (error) throw error;
       return data as TestResult[];
     },
   });
 
-  const resultsByTest = new Map<string, TestResult>();
+  const bestByTest = new Map<string, TestResult>();
   results.data?.forEach((r) => {
-    if (!resultsByTest.has(r.test_id)) resultsByTest.set(r.test_id, r);
+    const cur = bestByTest.get(r.mock_test_id);
+    if (!cur || (r.score ?? 0) > (cur.score ?? 0)) bestByTest.set(r.mock_test_id, r);
   });
 
   return (
@@ -78,11 +86,16 @@ function TestsPage() {
               {results.data.slice(0, 3).map((r) => (
                 <div key={r.id} className="bg-secondary rounded-lg p-3">
                   <div className="text-muted-foreground text-xs">
-                    {r.created_at ? new Date(r.created_at).toLocaleDateString() : ""}
+                    {r.completed_at ? new Date(r.completed_at).toLocaleDateString() : ""}
                   </div>
                   <div className="text-lg font-bold mt-1">
-                    {r.score ?? 0} <span className="text-sm text-muted-foreground">/ {r.total ?? "-"}</span>
+                    {r.score ?? 0} <span className="text-sm text-muted-foreground">/ {r.total_questions ?? "-"}</span>
                   </div>
+                  {r.time_taken_seconds != null && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {Math.floor(r.time_taken_seconds / 60)}m {r.time_taken_seconds % 60}s
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -100,26 +113,45 @@ function TestsPage() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {tests.data?.map((t) => {
-            const myResult = resultsByTest.get(t.id);
+            const myBest = bestByTest.get(t.id);
             return (
-              <div key={t.id} className="rounded-xl border border-border bg-card p-5 hover:border-[var(--khakhi-saffron)] transition-colors">
+              <div key={t.id} className="rounded-xl border border-border bg-card p-5 hover:border-[var(--khakhi-saffron)] transition-colors flex flex-col">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    {t.category && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {t.exam_type && (
                       <span className="text-xs font-medium text-white bg-[var(--khakhi-navy)] px-2 py-0.5 rounded">
-                        {t.category}
+                        {t.exam_type}
                       </span>
                     )}
-                    <h3 className="mt-2 font-semibold leading-tight">{t.title}</h3>
+                    {t.difficulty && (
+                      <span className="text-xs font-medium text-[var(--khakhi-navy)] bg-secondary px-2 py-0.5 rounded capitalize">
+                        {t.difficulty}
+                      </span>
+                    )}
+                    {t.is_premium && (
+                      <span className="text-xs font-semibold text-[var(--khakhi-saffron-deep)] bg-[var(--khakhi-saffron)]/15 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                        <Lock className="h-3 w-3" /> Premium
+                      </span>
+                    )}
                   </div>
-                  {myResult && (
-                    <span className="text-xs font-semibold text-[var(--khakhi-saffron-deep)] bg-[var(--khakhi-saffron)]/15 px-2 py-1 rounded">
-                      Best {myResult.score}/{myResult.total}
+                  {myBest && (
+                    <span className="text-xs font-semibold text-[var(--khakhi-saffron-deep)] bg-[var(--khakhi-saffron)]/15 px-2 py-1 rounded shrink-0">
+                      Best {myBest.score}/{myBest.total_questions}
                     </span>
                   )}
                 </div>
+                <h3 className="mt-2 font-semibold leading-tight">{t.name}</h3>
                 {t.description && (
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
+                )}
+                {t.subjects && t.subjects.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {t.subjects.slice(0, 4).map((s) => (
+                      <span key={s} className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
                 )}
                 <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
                   {t.duration_minutes && (

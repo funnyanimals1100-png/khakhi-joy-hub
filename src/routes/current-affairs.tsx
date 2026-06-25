@@ -17,9 +17,11 @@ export const Route = createFileRoute("/current-affairs")({
 type News = {
   id: string;
   title: string;
+  title_en?: string | null;
+  summary?: string | null;
   content?: string | null;
   category?: string | null;
-  created_at?: string;
+  published_date?: string | null;
 };
 
 function CAPage() {
@@ -30,7 +32,7 @@ function CAPage() {
         .from("news")
         .select("*")
         .ilike("category", "%current%")
-        .order("created_at", { ascending: false });
+        .order("published_date", { ascending: false });
       if (error) throw error;
       return data as News[];
     },
@@ -44,16 +46,17 @@ function CAPage() {
         {data && data.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <CalendarDays className="h-12 w-12 mx-auto mb-3 opacity-40" />
-            <p>No current affairs posts yet. Admin can tag news with "current-affairs" category.</p>
+            <p>No current affairs posts yet. Tag news with category "current-affairs".</p>
           </div>
         )}
         {data?.map((n) => (
           <article key={n.id} className="rounded-xl border border-border bg-card p-5 hover:border-[var(--khakhi-saffron)] transition-colors">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <CalendarDays className="h-3.5 w-3.5" />
-              {n.created_at && new Date(n.created_at).toLocaleDateString()}
+              {n.published_date && new Date(n.published_date).toLocaleDateString()}
             </div>
             <h2 className="font-semibold">{n.title}</h2>
+            {n.summary && <p className="mt-1 text-sm font-medium">{n.summary}</p>}
             {n.content && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">{n.content}</p>}
           </article>
         ))}
