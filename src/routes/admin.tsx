@@ -13,9 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase, STORAGE_BUCKET, ADMIN_EMAIL } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({
-    meta: [{ title: "Admin — Khakhi Pro" }],
-  }),
+  head: () => ({ meta: [{ title: "Admin — Khakhi Pro" }] }),
   component: () => (
     <Shell>
       <PageHeader title="Admin Panel" subtitle="Manage news, study material and tests" />
@@ -40,6 +38,8 @@ function AdminGate() {
   return <AdminPanel />;
 }
 
+const EXAM_TYPES = ["LRD", "PSI", "Constable"];
+
 function AdminPanel() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -57,6 +57,8 @@ function AdminPanel() {
   );
 }
 
+const selectCls = "w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm";
+
 /* ----- NEWS ----- */
 function NewsAdmin() {
   const qc = useQueryClient();
@@ -64,9 +66,9 @@ function NewsAdmin() {
   const { data } = useQuery({
     queryKey: ["admin", "news"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("news").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("news").select("*").order("published_date", { ascending: false });
       if (error) throw error;
-      return data as Array<{ id: string; title: string; category?: string | null }>;
+      return data as Array<{ id: string; title: string; category?: string | null; exam_type?: string | null }>;
     },
   });
 
@@ -78,8 +80,14 @@ function NewsAdmin() {
     try {
       const { error } = await supabase.from("news").insert({
         title: fd.get("title"),
-        content: fd.get("content"),
+        title_en: fd.get("title_en") || null,
+        summary: fd.get("summary") || null,
+        content: fd.get("content") || null,
         category: fd.get("category") || "general",
+        exam_type: fd.get("exam_type") || null,
+        is_important: fd.get("is_important") === "on",
+        is_new: true,
+        published_date: new Date().toISOString(),
       });
       if (error) throw error;
       toast.success("News published");
@@ -104,15 +112,29 @@ function NewsAdmin() {
     <div className="mt-5 grid lg:grid-cols-2 gap-6">
       <form onSubmit={create} className="rounded-xl border border-border bg-card p-5 space-y-3">
         <h3 className="font-semibold">Add News</h3>
-        <div><Label>Title</Label><Input name="title" required /></div>
-        <div><Label>Category</Label>
-          <select name="category" className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-            <option value="general">General</option>
-            <option value="current-affairs">Current Affairs</option>
-            <option value="notification">Notification</option>
-          </select>
+        <div><Label>Title (Gujarati)</Label><Input name="title" required /></div>
+        <div><Label>Title (English)</Label><Input name="title_en" /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Category</Label>
+            <select name="category" className={selectCls} defaultValue="general">
+              <option value="general">General</option>
+              <option value="current-affairs">Current Affairs</option>
+              <option value="notification">Notification</option>
+              <option value="result">Result</option>
+            </select>
+          </div>
+          <div><Label>Exam Type</Label>
+            <select name="exam_type" className={selectCls} defaultValue="">
+              <option value="">All</option>
+              {EXAM_TYPES.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
         </div>
-        <div><Label>Content</Label><Textarea name="content" rows={5} /></div>
+        <div><Label>Summary</Label><Input name="summary" /></div>
+        <div><Label>Content</Label><Textarea name="content" rows={4} /></div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="is_important" /> Mark as important
+        </label>
         <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">{busy ? "Saving..." : "Publish"}</Button>
       </form>
 
@@ -123,7 +145,7 @@ function NewsAdmin() {
             <li key={n.id} className="py-2 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm truncate">{n.title}</p>
-                <p className="text-xs text-muted-foreground">{n.category}</p>
+                <p className="text-xs text-muted-foreground">{n.category} · {n.exam_type ?? "All"}</p>
               </div>
               <button onClick={() => remove(n.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
                 <Trash2 className="h-4 w-4" />
@@ -143,9 +165,9 @@ function MaterialsAdmin() {
   const { data } = useQuery({
     queryKey: ["admin", "materials"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("study_materials").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("study_materials").select("*").order("order_index", { ascending: true });
       if (error) throw error;
-      return data as Array<{ id: string; title: string; subject?: string | null; file_url?: string | null }>;
+      return data as Array<{ id: string; title: string; subject?: string | null; exam_type?: string | null }>;
     },
   });
 
@@ -157,20 +179,27 @@ function MaterialsAdmin() {
     try {
       const file = fd.get("file") as File | null;
       let file_url: string | null = null;
+      let file_name: string | null = null;
+      let file_size: number | null = null;
       if (file && file.size > 0) {
         const path = `${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-        const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, {
-          upsert: false,
-        });
+        const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
         file_url = pub.publicUrl;
+        file_name = file.name;
+        file_size = file.size;
       }
       const { error } = await supabase.from("study_materials").insert({
         title: fd.get("title"),
-        description: fd.get("description"),
-        subject: fd.get("subject"),
+        description: fd.get("description") || null,
+        subject: fd.get("subject") || null,
+        exam_type: fd.get("exam_type") || null,
         file_url,
+        file_name,
+        file_size,
+        is_premium: fd.get("is_premium") === "on",
+        order_index: Number(fd.get("order_index")) || 0,
       });
       if (error) throw error;
       toast.success("Material added");
@@ -196,13 +225,25 @@ function MaterialsAdmin() {
       <form onSubmit={create} className="rounded-xl border border-border bg-card p-5 space-y-3">
         <h3 className="font-semibold">Add Study Material</h3>
         <div><Label>Title</Label><Input name="title" required /></div>
-        <div><Label>Subject</Label><Input name="subject" placeholder="e.g. Gujarati Grammar" /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Subject</Label><Input name="subject" placeholder="e.g. Gujarati Grammar" /></div>
+          <div><Label>Exam Type</Label>
+            <select name="exam_type" className={selectCls} defaultValue="">
+              <option value="">All</option>
+              {EXAM_TYPES.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+        </div>
         <div><Label>Description</Label><Textarea name="description" rows={3} /></div>
+        <div><Label>Order Index</Label><Input name="order_index" type="number" defaultValue={0} /></div>
         <div>
           <Label className="flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> File (PDF / Image)</Label>
           <Input name="file" type="file" accept=".pdf,image/*" />
-          <p className="text-xs text-muted-foreground mt-1">Uploaded to bucket: <code>{STORAGE_BUCKET}</code></p>
+          <p className="text-xs text-muted-foreground mt-1">Bucket: <code>{STORAGE_BUCKET}</code></p>
         </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="is_premium" /> Premium only
+        </label>
         <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">{busy ? "Uploading..." : "Add Material"}</Button>
       </form>
 
@@ -213,7 +254,7 @@ function MaterialsAdmin() {
             <li key={m.id} className="py-2 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm truncate">{m.title}</p>
-                <p className="text-xs text-muted-foreground">{m.subject}</p>
+                <p className="text-xs text-muted-foreground">{m.subject} · {m.exam_type ?? "All"}</p>
               </div>
               <button onClick={() => remove(m.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
                 <Trash2 className="h-4 w-4" />
@@ -233,9 +274,9 @@ function TestsAdmin() {
   const { data } = useQuery({
     queryKey: ["admin", "tests"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("mock_tests").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("mock_tests").select("*").order("name");
       if (error) throw error;
-      return data as Array<{ id: string; title: string; category?: string | null }>;
+      return data as Array<{ id: string; name: string; exam_type?: string | null; is_active?: boolean | null }>;
     },
   });
 
@@ -245,12 +286,18 @@ function TestsAdmin() {
     const fd = new FormData(form);
     setBusy(true);
     try {
+      const subjectsRaw = (fd.get("subjects") as string) || "";
+      const subjects = subjectsRaw.split(",").map((s) => s.trim()).filter(Boolean);
       const { error } = await supabase.from("mock_tests").insert({
-        title: fd.get("title"),
-        description: fd.get("description"),
-        category: fd.get("category"),
+        name: fd.get("name"),
+        description: fd.get("description") || null,
+        exam_type: fd.get("exam_type") || null,
         duration_minutes: Number(fd.get("duration_minutes")) || null,
         total_questions: Number(fd.get("total_questions")) || null,
+        difficulty: fd.get("difficulty") || null,
+        subjects: subjects.length ? subjects : null,
+        is_premium: fd.get("is_premium") === "on",
+        is_active: true,
       });
       if (error) throw error;
       toast.success("Mock test created");
@@ -275,13 +322,32 @@ function TestsAdmin() {
     <div className="mt-5 grid lg:grid-cols-2 gap-6">
       <form onSubmit={create} className="rounded-xl border border-border bg-card p-5 space-y-3">
         <h3 className="font-semibold">Add Mock Test</h3>
-        <div><Label>Title</Label><Input name="title" required /></div>
-        <div><Label>Category</Label><Input name="category" placeholder="LRD / PSI / Constable" /></div>
-        <div><Label>Description</Label><Textarea name="description" rows={3} /></div>
+        <div><Label>Name</Label><Input name="name" required /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Exam Type</Label>
+            <select name="exam_type" className={selectCls} defaultValue="LRD">
+              {EXAM_TYPES.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+          <div><Label>Difficulty</Label>
+            <select name="difficulty" className={selectCls} defaultValue="medium">
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div><Label>Description</Label><Textarea name="description" rows={2} /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Duration (min)</Label><Input name="duration_minutes" type="number" /></div>
           <div><Label>Total Questions</Label><Input name="total_questions" type="number" /></div>
         </div>
+        <div><Label>Subjects (comma-separated)</Label>
+          <Input name="subjects" placeholder="Gujarati, Reasoning, GK" />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="is_premium" /> Premium only
+        </label>
         <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">{busy ? "Saving..." : "Create Test"}</Button>
       </form>
 
@@ -291,8 +357,8 @@ function TestsAdmin() {
           {data?.map((t) => (
             <li key={t.id} className="py-2 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm truncate">{t.title}</p>
-                <p className="text-xs text-muted-foreground">{t.category}</p>
+                <p className="text-sm truncate">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.exam_type} {t.is_active ? "" : "· inactive"}</p>
               </div>
               <button onClick={() => remove(t.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
                 <Trash2 className="h-4 w-4" />

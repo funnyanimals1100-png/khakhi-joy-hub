@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Download, BookOpen } from "lucide-react";
+import { FileText, Download, BookOpen, Lock } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
 
@@ -19,10 +19,20 @@ type Material = {
   title: string;
   description?: string | null;
   subject?: string | null;
-  category?: string | null;
+  exam_type?: string | null;
   file_url?: string | null;
-  created_at?: string;
+  file_name?: string | null;
+  file_size?: number | null;
+  is_premium?: boolean | null;
+  order_index?: number | null;
 };
+
+function formatSize(bytes?: number | null) {
+  if (!bytes) return null;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 function StudyPage() {
   const { data, isLoading, error } = useQuery({
@@ -31,7 +41,7 @@ function StudyPage() {
       const { data, error } = await supabase
         .from("study_materials")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("order_index", { ascending: true });
       if (error) throw error;
       return data as Material[];
     },
@@ -56,12 +66,24 @@ function StudyPage() {
                 <div className="h-10 w-10 rounded-lg bg-[var(--khakhi-saffron)]/15 text-[var(--khakhi-saffron-deep)] flex items-center justify-center shrink-0">
                   <FileText className="h-5 w-5" />
                 </div>
-                <div className="min-w-0">
-                  {m.subject && (
-                    <span className="text-xs font-medium text-[var(--khakhi-navy)] bg-secondary px-2 py-0.5 rounded">
-                      {m.subject}
-                    </span>
-                  )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {m.subject && (
+                      <span className="text-xs font-medium text-[var(--khakhi-navy)] bg-secondary px-2 py-0.5 rounded">
+                        {m.subject}
+                      </span>
+                    )}
+                    {m.exam_type && (
+                      <span className="text-xs font-medium text-white bg-[var(--khakhi-navy)] px-2 py-0.5 rounded">
+                        {m.exam_type}
+                      </span>
+                    )}
+                    {m.is_premium && (
+                      <span className="text-xs font-semibold text-[var(--khakhi-saffron-deep)] bg-[var(--khakhi-saffron)]/15 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                        <Lock className="h-3 w-3" /> Premium
+                      </span>
+                    )}
+                  </div>
                   <h3 className="mt-2 font-semibold leading-tight">{m.title}</h3>
                   {m.description && (
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{m.description}</p>
@@ -69,14 +91,19 @@ function StudyPage() {
                 </div>
               </div>
               {m.file_url && (
-                <a
-                  href={m.file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--khakhi-navy)] hover:text-[var(--khakhi-saffron-deep)]"
-                >
-                  <Download className="h-4 w-4" /> Download
-                </a>
+                <div className="mt-4 flex items-center justify-between">
+                  <a
+                    href={m.file_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--khakhi-navy)] hover:text-[var(--khakhi-saffron-deep)]"
+                  >
+                    <Download className="h-4 w-4" /> Download
+                  </a>
+                  {formatSize(m.file_size) && (
+                    <span className="text-xs text-muted-foreground">{formatSize(m.file_size)}</span>
+                  )}
+                </div>
               )}
             </div>
           ))}
