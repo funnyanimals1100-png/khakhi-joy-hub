@@ -9,8 +9,62 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestsRouteImport } from './routes/tests'
+import { Route as StudyRouteImport } from './routes/study'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as NewsRouteImport } from './routes/news'
+import { Route as CurrentAffairsRouteImport } from './routes/current-affairs'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TestsRoute = TestsRouteImport.update({
+  id: '/tests',
+  path: '/tests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyRoute = StudyRouteImport.update({
+  id: '/study',
+  path: '/study',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PremiumRoute = PremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsRoute = NewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CurrentAffairsRoute = CurrentAffairsRouteImport.update({
+  id: '/current-affairs',
+  path: '/current-affairs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +73,158 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/current-affairs': typeof CurrentAffairsRoute
+  '/news': typeof NewsRoute
+  '/notifications': typeof NotificationsRoute
+  '/premium': typeof PremiumRoute
+  '/profile': typeof ProfileRoute
+  '/study': typeof StudyRoute
+  '/tests': typeof TestsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/current-affairs': typeof CurrentAffairsRoute
+  '/news': typeof NewsRoute
+  '/notifications': typeof NotificationsRoute
+  '/premium': typeof PremiumRoute
+  '/profile': typeof ProfileRoute
+  '/study': typeof StudyRoute
+  '/tests': typeof TestsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/current-affairs': typeof CurrentAffairsRoute
+  '/news': typeof NewsRoute
+  '/notifications': typeof NotificationsRoute
+  '/premium': typeof PremiumRoute
+  '/profile': typeof ProfileRoute
+  '/study': typeof StudyRoute
+  '/tests': typeof TestsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/current-affairs'
+    | '/news'
+    | '/notifications'
+    | '/premium'
+    | '/profile'
+    | '/study'
+    | '/tests'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/current-affairs'
+    | '/news'
+    | '/notifications'
+    | '/premium'
+    | '/profile'
+    | '/study'
+    | '/tests'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/current-affairs'
+    | '/news'
+    | '/notifications'
+    | '/premium'
+    | '/profile'
+    | '/study'
+    | '/tests'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AuthRoute: typeof AuthRoute
+  CurrentAffairsRoute: typeof CurrentAffairsRoute
+  NewsRoute: typeof NewsRoute
+  NotificationsRoute: typeof NotificationsRoute
+  PremiumRoute: typeof PremiumRoute
+  ProfileRoute: typeof ProfileRoute
+  StudyRoute: typeof StudyRoute
+  TestsRoute: typeof TestsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tests': {
+      id: '/tests'
+      path: '/tests'
+      fullPath: '/tests'
+      preLoaderRoute: typeof TestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study': {
+      id: '/study'
+      path: '/study'
+      fullPath: '/study'
+      preLoaderRoute: typeof StudyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/premium': {
+      id: '/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news': {
+      id: '/news'
+      path: '/news'
+      fullPath: '/news'
+      preLoaderRoute: typeof NewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/current-affairs': {
+      id: '/current-affairs'
+      path: '/current-affairs'
+      fullPath: '/current-affairs'
+      preLoaderRoute: typeof CurrentAffairsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +237,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AuthRoute: AuthRoute,
+  CurrentAffairsRoute: CurrentAffairsRoute,
+  NewsRoute: NewsRoute,
+  NotificationsRoute: NotificationsRoute,
+  PremiumRoute: PremiumRoute,
+  ProfileRoute: ProfileRoute,
+  StudyRoute: StudyRoute,
+  TestsRoute: TestsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
