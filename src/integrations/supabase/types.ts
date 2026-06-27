@@ -14,13 +14,271 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      mock_tests: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: string | null
+          duration_minutes: number | null
+          exam_type: string | null
+          id: string
+          is_active: boolean
+          is_premium: boolean
+          name: string
+          subjects: string[] | null
+          total_questions: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          duration_minutes?: number | null
+          exam_type?: string | null
+          id?: string
+          is_active?: boolean
+          is_premium?: boolean
+          name: string
+          subjects?: string[] | null
+          total_questions?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: string | null
+          duration_minutes?: number | null
+          exam_type?: string | null
+          id?: string
+          is_active?: boolean
+          is_premium?: boolean
+          name?: string
+          subjects?: string[] | null
+          total_questions?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      news: {
+        Row: {
+          category: string | null
+          content: string | null
+          created_at: string
+          exam_type: string | null
+          id: string
+          is_important: boolean
+          is_new: boolean
+          published_date: string
+          summary: string | null
+          title: string
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          exam_type?: string | null
+          id?: string
+          is_important?: boolean
+          is_new?: boolean
+          published_date?: string
+          summary?: string | null
+          title: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          exam_type?: string | null
+          id?: string
+          is_important?: boolean
+          is_new?: boolean
+          published_date?: string
+          summary?: string | null
+          title?: string
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          correct_answer: number
+          created_at: string
+          explanation: string | null
+          id: string
+          marks: number
+          mock_test_id: string
+          options: Json
+          order_index: number
+          question: string
+          subject: string | null
+        }
+        Insert: {
+          correct_answer: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          marks?: number
+          mock_test_id: string
+          options: Json
+          order_index?: number
+          question: string
+          subject?: string | null
+        }
+        Update: {
+          correct_answer?: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          marks?: number
+          mock_test_id?: string
+          options?: Json
+          order_index?: number
+          question?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_mock_test_id_fkey"
+            columns: ["mock_test_id"]
+            isOneToOne: false
+            referencedRelation: "mock_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          exam_type: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          is_premium: boolean
+          order_index: number
+          subject: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          exam_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_premium?: boolean
+          order_index?: number
+          subject?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          exam_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_premium?: boolean
+          order_index?: number
+          subject?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      test_results: {
+        Row: {
+          answers: Json | null
+          completed_at: string
+          created_at: string
+          id: string
+          mock_test_id: string
+          score: number | null
+          time_taken_seconds: number | null
+          total_questions: number | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          completed_at?: string
+          created_at?: string
+          id?: string
+          mock_test_id: string
+          score?: number | null
+          time_taken_seconds?: number | null
+          total_questions?: number | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          completed_at?: string
+          created_at?: string
+          id?: string
+          mock_test_id?: string
+          score?: number | null
+          time_taken_seconds?: number | null
+          total_questions?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_results_mock_test_id_fkey"
+            columns: ["mock_test_id"]
+            isOneToOne: false
+            referencedRelation: "mock_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          exam_type: string | null
+          id: string
+          is_admin: boolean
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          exam_type?: string | null
+          id: string
+          is_admin?: boolean
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          exam_type?: string | null
+          id?: string
+          is_admin?: boolean
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: { uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
