@@ -12,6 +12,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase, STORAGE_BUCKET, ADMIN_EMAIL } from "@/lib/supabase";
 
+const s = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
+const sn = (v: FormDataEntryValue | null) => {
+  const x = typeof v === "string" ? v.trim() : "";
+  return x ? x : null;
+};
+
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Khakhi Pro" }] }),
   component: () => (
