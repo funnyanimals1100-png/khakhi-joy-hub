@@ -85,12 +85,12 @@ function NewsAdmin() {
     setBusy(true);
     try {
       const { error } = await supabase.from("news").insert({
-        title: fd.get("title"),
-        title_en: fd.get("title_en") || null,
-        summary: fd.get("summary") || null,
-        content: fd.get("content") || null,
-        category: fd.get("category") || "general",
-        exam_type: fd.get("exam_type") || null,
+        title: s(fd.get("title")),
+        title_en: sn(fd.get("title_en")),
+        summary: sn(fd.get("summary")),
+        content: sn(fd.get("content")),
+        category: s(fd.get("category")) || "general",
+        exam_type: sn(fd.get("exam_type")),
         is_important: fd.get("is_important") === "on",
         is_new: true,
         published_date: new Date().toISOString(),
@@ -197,10 +197,10 @@ function MaterialsAdmin() {
         file_size = file.size;
       }
       const { error } = await supabase.from("study_materials").insert({
-        title: fd.get("title"),
-        description: fd.get("description") || null,
-        subject: fd.get("subject") || null,
-        exam_type: fd.get("exam_type") || null,
+        title: s(fd.get("title")),
+        description: sn(fd.get("description")),
+        subject: sn(fd.get("subject")),
+        exam_type: sn(fd.get("exam_type")),
         file_url,
         file_name,
         file_size,
@@ -295,12 +295,12 @@ function TestsAdmin() {
       const subjectsRaw = (fd.get("subjects") as string) || "";
       const subjects = subjectsRaw.split(",").map((s) => s.trim()).filter(Boolean);
       const { error } = await supabase.from("mock_tests").insert({
-        name: fd.get("name"),
-        description: fd.get("description") || null,
-        exam_type: fd.get("exam_type") || null,
+        name: s(fd.get("name")),
+        description: sn(fd.get("description")),
+        exam_type: sn(fd.get("exam_type")),
         duration_minutes: Number(fd.get("duration_minutes")) || null,
         total_questions: Number(fd.get("total_questions")) || null,
-        difficulty: fd.get("difficulty") || null,
+        difficulty: sn(fd.get("difficulty")),
         subjects: subjects.length ? subjects : null,
         is_premium: fd.get("is_premium") === "on",
         is_active: true,
