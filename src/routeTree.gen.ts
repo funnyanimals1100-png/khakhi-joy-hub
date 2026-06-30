@@ -19,6 +19,9 @@ import { Route as CurrentAffairsRouteImport } from './routes/current-affairs'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TestsTestIdRouteImport } from './routes/tests.$testId'
+import { Route as StudyIdRouteImport } from './routes/study.$id'
+import { Route as NewsIdRouteImport } from './routes/news.$id'
 
 const TestsRoute = TestsRouteImport.update({
   id: '/tests',
@@ -70,30 +73,51 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TestsTestIdRoute = TestsTestIdRouteImport.update({
+  id: '/$testId',
+  path: '/$testId',
+  getParentRoute: () => TestsRoute,
+} as any)
+const StudyIdRoute = StudyIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => StudyRoute,
+} as any)
+const NewsIdRoute = NewsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => NewsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/current-affairs': typeof CurrentAffairsRoute
-  '/news': typeof NewsRoute
+  '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/study': typeof StudyRoute
-  '/tests': typeof TestsRoute
+  '/study': typeof StudyRouteWithChildren
+  '/tests': typeof TestsRouteWithChildren
+  '/news/$id': typeof NewsIdRoute
+  '/study/$id': typeof StudyIdRoute
+  '/tests/$testId': typeof TestsTestIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/current-affairs': typeof CurrentAffairsRoute
-  '/news': typeof NewsRoute
+  '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/study': typeof StudyRoute
-  '/tests': typeof TestsRoute
+  '/study': typeof StudyRouteWithChildren
+  '/tests': typeof TestsRouteWithChildren
+  '/news/$id': typeof NewsIdRoute
+  '/study/$id': typeof StudyIdRoute
+  '/tests/$testId': typeof TestsTestIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -101,12 +125,15 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/current-affairs': typeof CurrentAffairsRoute
-  '/news': typeof NewsRoute
+  '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/study': typeof StudyRoute
-  '/tests': typeof TestsRoute
+  '/study': typeof StudyRouteWithChildren
+  '/tests': typeof TestsRouteWithChildren
+  '/news/$id': typeof NewsIdRoute
+  '/study/$id': typeof StudyIdRoute
+  '/tests/$testId': typeof TestsTestIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +148,9 @@ export interface FileRouteTypes {
     | '/profile'
     | '/study'
     | '/tests'
+    | '/news/$id'
+    | '/study/$id'
+    | '/tests/$testId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +163,9 @@ export interface FileRouteTypes {
     | '/profile'
     | '/study'
     | '/tests'
+    | '/news/$id'
+    | '/study/$id'
+    | '/tests/$testId'
   id:
     | '__root__'
     | '/'
@@ -145,6 +178,9 @@ export interface FileRouteTypes {
     | '/profile'
     | '/study'
     | '/tests'
+    | '/news/$id'
+    | '/study/$id'
+    | '/tests/$testId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -152,12 +188,12 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   CurrentAffairsRoute: typeof CurrentAffairsRoute
-  NewsRoute: typeof NewsRoute
+  NewsRoute: typeof NewsRouteWithChildren
   NotificationsRoute: typeof NotificationsRoute
   PremiumRoute: typeof PremiumRoute
   ProfileRoute: typeof ProfileRoute
-  StudyRoute: typeof StudyRoute
-  TestsRoute: typeof TestsRoute
+  StudyRoute: typeof StudyRouteWithChildren
+  TestsRoute: typeof TestsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -232,20 +268,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tests/$testId': {
+      id: '/tests/$testId'
+      path: '/$testId'
+      fullPath: '/tests/$testId'
+      preLoaderRoute: typeof TestsTestIdRouteImport
+      parentRoute: typeof TestsRoute
+    }
+    '/study/$id': {
+      id: '/study/$id'
+      path: '/$id'
+      fullPath: '/study/$id'
+      preLoaderRoute: typeof StudyIdRouteImport
+      parentRoute: typeof StudyRoute
+    }
+    '/news/$id': {
+      id: '/news/$id'
+      path: '/$id'
+      fullPath: '/news/$id'
+      preLoaderRoute: typeof NewsIdRouteImport
+      parentRoute: typeof NewsRoute
+    }
   }
 }
+
+interface NewsRouteChildren {
+  NewsIdRoute: typeof NewsIdRoute
+}
+
+const NewsRouteChildren: NewsRouteChildren = {
+  NewsIdRoute: NewsIdRoute,
+}
+
+const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
+
+interface StudyRouteChildren {
+  StudyIdRoute: typeof StudyIdRoute
+}
+
+const StudyRouteChildren: StudyRouteChildren = {
+  StudyIdRoute: StudyIdRoute,
+}
+
+const StudyRouteWithChildren = StudyRoute._addFileChildren(StudyRouteChildren)
+
+interface TestsRouteChildren {
+  TestsTestIdRoute: typeof TestsTestIdRoute
+}
+
+const TestsRouteChildren: TestsRouteChildren = {
+  TestsTestIdRoute: TestsTestIdRoute,
+}
+
+const TestsRouteWithChildren = TestsRoute._addFileChildren(TestsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   CurrentAffairsRoute: CurrentAffairsRoute,
-  NewsRoute: NewsRoute,
+  NewsRoute: NewsRouteWithChildren,
   NotificationsRoute: NotificationsRoute,
   PremiumRoute: PremiumRoute,
   ProfileRoute: ProfileRoute,
-  StudyRoute: StudyRoute,
-  TestsRoute: TestsRoute,
+  StudyRoute: StudyRouteWithChildren,
+  TestsRoute: TestsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

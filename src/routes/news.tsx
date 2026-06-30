@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Newspaper, Sparkles, AlertCircle } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
@@ -52,7 +52,12 @@ function NewsPage() {
           </div>
         )}
         {data?.map((n) => (
-          <article key={n.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
+          <Link
+            key={n.id}
+            to="/news/$id"
+            params={{ id: n.id }}
+            className="block rounded-xl border border-border bg-card p-5 hover:shadow-md hover:border-[var(--khakhi-saffron)] transition-all"
+          >
             <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
               {n.category && (
                 <span className="font-semibold text-[var(--khakhi-saffron-deep)] uppercase">{n.category}</span>
@@ -80,7 +85,7 @@ function NewsPage() {
             {n.content && (
               <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-5">{n.content}</p>
             )}
-          </article>
+          </Link>
         ))}
       </div>
     </Shell>

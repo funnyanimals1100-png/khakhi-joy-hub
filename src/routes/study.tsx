@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Download, BookOpen, Lock } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
@@ -61,7 +61,12 @@ function StudyPage() {
         )}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {data?.map((m) => (
-            <div key={m.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
+            <Link
+              key={m.id}
+              to="/study/$id"
+              params={{ id: m.id }}
+              className="block rounded-xl border border-border bg-card p-5 hover:shadow-md hover:border-[var(--khakhi-saffron)] transition-all"
+            >
               <div className="flex items-start gap-3">
                 <div className="h-10 w-10 rounded-lg bg-[var(--khakhi-saffron)]/15 text-[var(--khakhi-saffron-deep)] flex items-center justify-center shrink-0">
                   <FileText className="h-5 w-5" />
@@ -92,20 +97,15 @@ function StudyPage() {
               </div>
               {m.file_url && (
                 <div className="mt-4 flex items-center justify-between">
-                  <a
-                    href={m.file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--khakhi-navy)] hover:text-[var(--khakhi-saffron-deep)]"
-                  >
-                    <Download className="h-4 w-4" /> Download
-                  </a>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--khakhi-navy)]">
+                    <Download className="h-4 w-4" /> Open
+                  </span>
                   {formatSize(m.file_size) && (
                     <span className="text-xs text-muted-foreground">{formatSize(m.file_size)}</span>
                   )}
                 </div>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       </div>

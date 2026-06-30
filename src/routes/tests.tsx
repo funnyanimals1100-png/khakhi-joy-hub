@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardCheck, Clock, TrendingUp, Lock } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
@@ -161,9 +161,13 @@ function TestsPage() {
                   )}
                   {t.total_questions && <span>{t.total_questions} questions</span>}
                 </div>
-                <button className="mt-4 w-full rounded-md bg-[var(--khakhi-navy)] text-white text-sm font-medium py-2 hover:brightness-110">
+                <Link
+                  to="/tests/$testId"
+                  params={{ testId: t.id }}
+                  className="mt-4 w-full rounded-md bg-[var(--khakhi-navy)] text-white text-sm font-medium py-2 hover:brightness-110 text-center"
+                >
                   Start Test
-                </button>
+                </Link>
               </div>
             );
           })}

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
@@ -50,15 +50,20 @@ function CAPage() {
           </div>
         )}
         {data?.map((n) => (
-          <article key={n.id} className="rounded-xl border border-border bg-card p-5 hover:border-[var(--khakhi-saffron)] transition-colors">
+          <Link
+            key={n.id}
+            to="/news/$id"
+            params={{ id: n.id }}
+            className="block rounded-xl border border-border bg-card p-5 hover:border-[var(--khakhi-saffron)] transition-colors"
+          >
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
               <CalendarDays className="h-3.5 w-3.5" />
               {n.published_date && new Date(n.published_date).toLocaleDateString()}
             </div>
             <h2 className="font-semibold">{n.title}</h2>
             {n.summary && <p className="mt-1 text-sm font-medium">{n.summary}</p>}
-            {n.content && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">{n.content}</p>}
-          </article>
+            {n.content && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-4">{n.content}</p>}
+          </Link>
         ))}
       </div>
     </Shell>
