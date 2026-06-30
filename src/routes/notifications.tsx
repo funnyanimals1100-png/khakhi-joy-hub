@@ -50,7 +50,12 @@ function NotificationsPage() {
           </div>
         )}
         {data?.map((n) => (
-          <div key={n.id} className="flex gap-3 rounded-xl border border-border bg-card p-4 hover:border-[var(--khakhi-saffron)]">
+          <Link
+            key={n.id}
+            to="/news/$id"
+            params={{ id: n.id }}
+            className="flex gap-3 rounded-xl border border-border bg-card p-4 hover:border-[var(--khakhi-saffron)] transition-colors"
+          >
             <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${n.is_important ? "bg-destructive/15 text-destructive" : "bg-[var(--khakhi-saffron)]/15 text-[var(--khakhi-saffron-deep)]"}`}>
               {n.is_important ? <AlertCircle className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
             </div>
@@ -61,7 +66,7 @@ function NotificationsPage() {
                 <p className="text-xs text-muted-foreground mt-1">{new Date(n.published_date).toLocaleString()}</p>
               )}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </Shell>
