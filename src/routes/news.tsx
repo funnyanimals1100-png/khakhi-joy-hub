@@ -85,7 +85,7 @@ function NewsPage() {
             {n.content && (
               <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-5">{n.content}</p>
             )}
-          </article>
+          </Link>
         ))}
       </div>
     </Shell>
