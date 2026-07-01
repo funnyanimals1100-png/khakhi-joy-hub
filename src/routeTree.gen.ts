@@ -74,19 +74,19 @@ const NewsIndexRoute = NewsIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const TestsTestIdRoute = TestsTestIdRouteImport.update({
-  id: '/tests/$testId',
-  path: '/tests/$testId',
-  getParentRoute: () => rootRouteImport,
+  id: '/$testId',
+  path: '/$testId',
+  getParentRoute: () => TestsRoute,
 } as any)
 const StudyIdRoute = StudyIdRouteImport.update({
-  id: '/study/$id',
-  path: '/study/$id',
-  getParentRoute: () => rootRouteImport,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => StudyRoute,
 } as any)
 const NewsIdRoute = NewsIdRouteImport.update({
-  id: '/news/$id',
-  path: '/news/$id',
-  getParentRoute: () => rootRouteImport,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => NewsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -191,9 +191,6 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PremiumRoute: typeof PremiumRoute
   ProfileRoute: typeof ProfileRoute
-  NewsIdRoute: typeof NewsIdRoute
-  StudyIdRoute: typeof StudyIdRoute
-  TestsTestIdRoute: typeof TestsTestIdRoute
   NewsIndexRoute: typeof NewsIndexRoute
   StudyIndexRoute: typeof StudyIndexRoute
   TestsIndexRoute: typeof TestsIndexRoute
@@ -273,24 +270,24 @@ declare module '@tanstack/react-router' {
     }
     '/tests/$testId': {
       id: '/tests/$testId'
-      path: '/tests/$testId'
+      path: '/$testId'
       fullPath: '/tests/$testId'
       preLoaderRoute: typeof TestsTestIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TestsRoute
     }
     '/study/$id': {
       id: '/study/$id'
-      path: '/study/$id'
+      path: '/$id'
       fullPath: '/study/$id'
       preLoaderRoute: typeof StudyIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof StudyRoute
     }
     '/news/$id': {
       id: '/news/$id'
-      path: '/news/$id'
+      path: '/$id'
       fullPath: '/news/$id'
       preLoaderRoute: typeof NewsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof NewsRoute
     }
   }
 }
@@ -303,9 +300,6 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PremiumRoute: PremiumRoute,
   ProfileRoute: ProfileRoute,
-  NewsIdRoute: NewsIdRoute,
-  StudyIdRoute: StudyIdRoute,
-  TestsTestIdRoute: TestsTestIdRoute,
   NewsIndexRoute: NewsIndexRoute,
   StudyIndexRoute: StudyIndexRoute,
   TestsIndexRoute: TestsIndexRoute,
@@ -313,3 +307,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
