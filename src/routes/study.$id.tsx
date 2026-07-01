@@ -75,8 +75,9 @@ function StudyDetail() {
               <a
                 href={data.file_url}
                 target="_blank"
-                rel="noreferrer"
-                className="mt-6 inline-flex items-center gap-2 rounded-md bg-[var(--khakhi-navy)] text-white text-sm font-medium px-4 py-2 hover:brightness-110"
+                rel="noreferrer noopener"
+                download={data.file_name ?? true}
+                className="mt-6 inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-md bg-[var(--khakhi-navy)] text-white text-sm font-medium px-4 py-3 hover:brightness-110 active:brightness-95 touch-manipulation"
               >
                 <Download className="h-4 w-4" />
                 Download {data.file_name ?? "file"}
