@@ -151,6 +151,54 @@ export type Database = {
           },
         ]
       }
+      recruitment_notifications: {
+        Row: {
+          apply_link: string | null
+          created_at: string
+          description: string | null
+          exam_type: string | null
+          id: string
+          important_dates: Json | null
+          is_active: boolean
+          last_date: string | null
+          official_link: string | null
+          organization: string | null
+          posted_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          apply_link?: string | null
+          created_at?: string
+          description?: string | null
+          exam_type?: string | null
+          id?: string
+          important_dates?: Json | null
+          is_active?: boolean
+          last_date?: string | null
+          official_link?: string | null
+          organization?: string | null
+          posted_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          apply_link?: string | null
+          created_at?: string
+          description?: string | null
+          exam_type?: string | null
+          id?: string
+          important_dates?: Json | null
+          is_active?: boolean
+          last_date?: string | null
+          official_link?: string | null
+          organization?: string | null
+          posted_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       study_materials: {
         Row: {
           created_at: string
