@@ -74,19 +74,19 @@ const NewsIndexRoute = NewsIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const TestsTestIdRoute = TestsTestIdRouteImport.update({
-  id: '/$testId',
-  path: '/$testId',
-  getParentRoute: () => TestsRoute,
+  id: '/tests/$testId',
+  path: '/tests/$testId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StudyIdRoute = StudyIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => StudyRoute,
+  id: '/study/$id',
+  path: '/study/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const NewsIdRoute = NewsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => NewsRoute,
+  id: '/news/$id',
+  path: '/news/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -191,6 +191,9 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PremiumRoute: typeof PremiumRoute
   ProfileRoute: typeof ProfileRoute
+  NewsIdRoute: typeof NewsIdRoute
+  StudyIdRoute: typeof StudyIdRoute
+  TestsTestIdRoute: typeof TestsTestIdRoute
   NewsIndexRoute: typeof NewsIndexRoute
   StudyIndexRoute: typeof StudyIndexRoute
   TestsIndexRoute: typeof TestsIndexRoute
@@ -270,24 +273,24 @@ declare module '@tanstack/react-router' {
     }
     '/tests/$testId': {
       id: '/tests/$testId'
-      path: '/$testId'
+      path: '/tests/$testId'
       fullPath: '/tests/$testId'
       preLoaderRoute: typeof TestsTestIdRouteImport
-      parentRoute: typeof TestsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/study/$id': {
       id: '/study/$id'
-      path: '/$id'
+      path: '/study/$id'
       fullPath: '/study/$id'
       preLoaderRoute: typeof StudyIdRouteImport
-      parentRoute: typeof StudyRoute
+      parentRoute: typeof rootRouteImport
     }
     '/news/$id': {
       id: '/news/$id'
-      path: '/$id'
+      path: '/news/$id'
       fullPath: '/news/$id'
       preLoaderRoute: typeof NewsIdRouteImport
-      parentRoute: typeof NewsRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -300,6 +303,9 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PremiumRoute: PremiumRoute,
   ProfileRoute: ProfileRoute,
+  NewsIdRoute: NewsIdRoute,
+  StudyIdRoute: StudyIdRoute,
+  TestsTestIdRoute: TestsTestIdRoute,
   NewsIndexRoute: NewsIndexRoute,
   StudyIndexRoute: StudyIndexRoute,
   TestsIndexRoute: TestsIndexRoute,
