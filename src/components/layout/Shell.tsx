@@ -1,8 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Menu, Moon, Sun, Shield, LogOut, X } from "lucide-react";
+import { Menu, Moon, Sun, Shield, LogOut, X, Languages } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
+import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ const NAV = [
 export function Shell({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
   const { theme, toggle } = useTheme();
+  const { lang, toggle: toggleLang } = useLanguage();
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -60,6 +62,15 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLang}
+              aria-label="Toggle language"
+              title={lang === "gu" ? "Switch to English" : "ગુજરાતીમાં બદલો"}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-white/10 transition-colors text-xs font-semibold"
+            >
+              <Languages className="h-4 w-4" />
+              <span>{lang === "gu" ? "ગુજ" : "EN"}</span>
+            </button>
             <button
               onClick={toggle}
               aria-label="Toggle theme"
