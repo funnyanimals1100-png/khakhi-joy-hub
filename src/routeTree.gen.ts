@@ -9,30 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestsRouteImport } from './routes/tests'
-import { Route as StudyRouteImport } from './routes/study'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as NewsRouteImport } from './routes/news'
 import { Route as CurrentAffairsRouteImport } from './routes/current-affairs'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TestsIndexRouteImport } from './routes/tests.index'
+import { Route as StudyIndexRouteImport } from './routes/study.index'
+import { Route as NewsIndexRouteImport } from './routes/news.index'
 import { Route as TestsTestIdRouteImport } from './routes/tests.$testId'
 import { Route as StudyIdRouteImport } from './routes/study.$id'
 import { Route as NewsIdRouteImport } from './routes/news.$id'
 
-const TestsRoute = TestsRouteImport.update({
-  id: '/tests',
-  path: '/tests',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StudyRoute = StudyRouteImport.update({
-  id: '/study',
-  path: '/study',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -46,11 +36,6 @@ const PremiumRoute = PremiumRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NewsRoute = NewsRouteImport.update({
-  id: '/news',
-  path: '/news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CurrentAffairsRoute = CurrentAffairsRouteImport.update({
@@ -73,20 +58,35 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TestsIndexRoute = TestsIndexRouteImport.update({
+  id: '/tests/',
+  path: '/tests/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyIndexRoute = StudyIndexRouteImport.update({
+  id: '/study/',
+  path: '/study/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsIndexRoute = NewsIndexRouteImport.update({
+  id: '/news/',
+  path: '/news/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TestsTestIdRoute = TestsTestIdRouteImport.update({
-  id: '/$testId',
-  path: '/$testId',
-  getParentRoute: () => TestsRoute,
+  id: '/tests/$testId',
+  path: '/tests/$testId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StudyIdRoute = StudyIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => StudyRoute,
+  id: '/study/$id',
+  path: '/study/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const NewsIdRoute = NewsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => NewsRoute,
+  id: '/news/$id',
+  path: '/news/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -94,30 +94,30 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/current-affairs': typeof CurrentAffairsRoute
-  '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/study': typeof StudyRouteWithChildren
-  '/tests': typeof TestsRouteWithChildren
   '/news/$id': typeof NewsIdRoute
   '/study/$id': typeof StudyIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
+  '/news/': typeof NewsIndexRoute
+  '/study/': typeof StudyIndexRoute
+  '/tests/': typeof TestsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/current-affairs': typeof CurrentAffairsRoute
-  '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/study': typeof StudyRouteWithChildren
-  '/tests': typeof TestsRouteWithChildren
   '/news/$id': typeof NewsIdRoute
   '/study/$id': typeof StudyIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
+  '/news': typeof NewsIndexRoute
+  '/study': typeof StudyIndexRoute
+  '/tests': typeof TestsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,15 +125,15 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/current-affairs': typeof CurrentAffairsRoute
-  '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/premium': typeof PremiumRoute
   '/profile': typeof ProfileRoute
-  '/study': typeof StudyRouteWithChildren
-  '/tests': typeof TestsRouteWithChildren
   '/news/$id': typeof NewsIdRoute
   '/study/$id': typeof StudyIdRoute
   '/tests/$testId': typeof TestsTestIdRoute
+  '/news/': typeof NewsIndexRoute
+  '/study/': typeof StudyIndexRoute
+  '/tests/': typeof TestsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,45 +142,45 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/current-affairs'
-    | '/news'
     | '/notifications'
     | '/premium'
     | '/profile'
-    | '/study'
-    | '/tests'
     | '/news/$id'
     | '/study/$id'
     | '/tests/$testId'
+    | '/news/'
+    | '/study/'
+    | '/tests/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/auth'
     | '/current-affairs'
-    | '/news'
     | '/notifications'
     | '/premium'
     | '/profile'
-    | '/study'
-    | '/tests'
     | '/news/$id'
     | '/study/$id'
     | '/tests/$testId'
+    | '/news'
+    | '/study'
+    | '/tests'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
     | '/current-affairs'
-    | '/news'
     | '/notifications'
     | '/premium'
     | '/profile'
-    | '/study'
-    | '/tests'
     | '/news/$id'
     | '/study/$id'
     | '/tests/$testId'
+    | '/news/'
+    | '/study/'
+    | '/tests/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,30 +188,19 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   CurrentAffairsRoute: typeof CurrentAffairsRoute
-  NewsRoute: typeof NewsRouteWithChildren
   NotificationsRoute: typeof NotificationsRoute
   PremiumRoute: typeof PremiumRoute
   ProfileRoute: typeof ProfileRoute
-  StudyRoute: typeof StudyRouteWithChildren
-  TestsRoute: typeof TestsRouteWithChildren
+  NewsIdRoute: typeof NewsIdRoute
+  StudyIdRoute: typeof StudyIdRoute
+  TestsTestIdRoute: typeof TestsTestIdRoute
+  NewsIndexRoute: typeof NewsIndexRoute
+  StudyIndexRoute: typeof StudyIndexRoute
+  TestsIndexRoute: typeof TestsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tests': {
-      id: '/tests'
-      path: '/tests'
-      fullPath: '/tests'
-      preLoaderRoute: typeof TestsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/study': {
-      id: '/study'
-      path: '/study'
-      fullPath: '/study'
-      preLoaderRoute: typeof StudyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -231,13 +220,6 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/news': {
-      id: '/news'
-      path: '/news'
-      fullPath: '/news'
-      preLoaderRoute: typeof NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/current-affairs': {
@@ -268,71 +250,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tests/': {
+      id: '/tests/'
+      path: '/tests'
+      fullPath: '/tests/'
+      preLoaderRoute: typeof TestsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study/': {
+      id: '/study/'
+      path: '/study'
+      fullPath: '/study/'
+      preLoaderRoute: typeof StudyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/': {
+      id: '/news/'
+      path: '/news'
+      fullPath: '/news/'
+      preLoaderRoute: typeof NewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tests/$testId': {
       id: '/tests/$testId'
-      path: '/$testId'
+      path: '/tests/$testId'
       fullPath: '/tests/$testId'
       preLoaderRoute: typeof TestsTestIdRouteImport
-      parentRoute: typeof TestsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/study/$id': {
       id: '/study/$id'
-      path: '/$id'
+      path: '/study/$id'
       fullPath: '/study/$id'
       preLoaderRoute: typeof StudyIdRouteImport
-      parentRoute: typeof StudyRoute
+      parentRoute: typeof rootRouteImport
     }
     '/news/$id': {
       id: '/news/$id'
-      path: '/$id'
+      path: '/news/$id'
       fullPath: '/news/$id'
       preLoaderRoute: typeof NewsIdRouteImport
-      parentRoute: typeof NewsRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
-
-interface NewsRouteChildren {
-  NewsIdRoute: typeof NewsIdRoute
-}
-
-const NewsRouteChildren: NewsRouteChildren = {
-  NewsIdRoute: NewsIdRoute,
-}
-
-const NewsRouteWithChildren = NewsRoute._addFileChildren(NewsRouteChildren)
-
-interface StudyRouteChildren {
-  StudyIdRoute: typeof StudyIdRoute
-}
-
-const StudyRouteChildren: StudyRouteChildren = {
-  StudyIdRoute: StudyIdRoute,
-}
-
-const StudyRouteWithChildren = StudyRoute._addFileChildren(StudyRouteChildren)
-
-interface TestsRouteChildren {
-  TestsTestIdRoute: typeof TestsTestIdRoute
-}
-
-const TestsRouteChildren: TestsRouteChildren = {
-  TestsTestIdRoute: TestsTestIdRoute,
-}
-
-const TestsRouteWithChildren = TestsRoute._addFileChildren(TestsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   CurrentAffairsRoute: CurrentAffairsRoute,
-  NewsRoute: NewsRouteWithChildren,
   NotificationsRoute: NotificationsRoute,
   PremiumRoute: PremiumRoute,
   ProfileRoute: ProfileRoute,
-  StudyRoute: StudyRouteWithChildren,
-  TestsRoute: TestsRouteWithChildren,
+  NewsIdRoute: NewsIdRoute,
+  StudyIdRoute: StudyIdRoute,
+  TestsTestIdRoute: TestsTestIdRoute,
+  NewsIndexRoute: NewsIndexRoute,
+  StudyIndexRoute: StudyIndexRoute,
+  TestsIndexRoute: TestsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -5,7 +5,7 @@ import { Shell, PageHeader } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/tests")({
+export const Route = createFileRoute("/tests/")({
   head: () => ({
     meta: [
       { title: "Mock Tests — Khakhi Pro" },

@@ -4,7 +4,7 @@ import { Newspaper, Sparkles, AlertCircle } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/news")({
+export const Route = createFileRoute("/news/")({
   head: () => ({
     meta: [
       { title: "News — Khakhi Pro" },

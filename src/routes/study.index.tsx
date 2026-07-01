@@ -4,7 +4,7 @@ import { FileText, Download, BookOpen, Lock } from "lucide-react";
 import { Shell, PageHeader } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/study")({
+export const Route = createFileRoute("/study/")({
   head: () => ({
     meta: [
       { title: "Study Material — Khakhi Pro" },
