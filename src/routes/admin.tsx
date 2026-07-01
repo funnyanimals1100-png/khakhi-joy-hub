@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Shield, Newspaper, BookOpen, ClipboardCheck, Trash2, Upload } from "lucide-react";
+import { Shield, Newspaper, BookOpen, ClipboardCheck, Trash2, Upload, Megaphone, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Shell, PageHeader, RequireAuth } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
@@ -49,12 +49,14 @@ const EXAM_TYPES = ["LRD", "PSI", "Constable"];
 function AdminPanel() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <Tabs defaultValue="news">
+      <Tabs defaultValue="recruitment">
         <TabsList>
+          <TabsTrigger value="recruitment"><Megaphone className="h-4 w-4 mr-2" />Recruitment</TabsTrigger>
           <TabsTrigger value="news"><Newspaper className="h-4 w-4 mr-2" />News</TabsTrigger>
           <TabsTrigger value="materials"><BookOpen className="h-4 w-4 mr-2" />Materials</TabsTrigger>
           <TabsTrigger value="tests"><ClipboardCheck className="h-4 w-4 mr-2" />Tests</TabsTrigger>
         </TabsList>
+        <TabsContent value="recruitment"><RecruitmentAdmin /></TabsContent>
         <TabsContent value="news"><NewsAdmin /></TabsContent>
         <TabsContent value="materials"><MaterialsAdmin /></TabsContent>
         <TabsContent value="tests"><TestsAdmin /></TabsContent>
