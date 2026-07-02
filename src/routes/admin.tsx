@@ -98,10 +98,11 @@ function NewsAdmin() {
         content: sn(fd.get("content")),
         category: s(fd.get("category")) || "general",
         exam_type: sn(fd.get("exam_type")),
+        apply_link: sn(fd.get("apply_link")),
         is_important: fd.get("is_important") === "on",
         is_new: true,
         published_date: new Date().toISOString(),
-      });
+      } as never);
       if (error) throw error;
       toast.success("News published");
       form.reset();
@@ -145,6 +146,11 @@ function NewsAdmin() {
         </div>
         <div><Label>Summary</Label><Input name="summary" /></div>
         <div><Label>Content</Label><Textarea name="content" rows={4} /></div>
+        <div>
+          <Label>Apply / Notification Link (OJAS URL)</Label>
+          <Input name="apply_link" type="url" placeholder="https://ojas.gujarat.gov.in/..." />
+          <p className="text-xs text-muted-foreground mt-1">If set, an "Apply Now" button will appear on the news detail page.</p>
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="is_important" /> Mark as important
         </label>
