@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Shield, Newspaper, BookOpen, ClipboardCheck, Trash2, Upload, Megaphone, Plus, X } from "lucide-react";
+import { Shield, Newspaper, BookOpen, ClipboardCheck, Trash2, Upload, Megaphone, Plus, X, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Shell, PageHeader, RequireAuth } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase, STORAGE_BUCKET, ADMIN_EMAIL } from "@/lib/supabase";
+import {
+  generateQuestionsForTest,
+  createMaterialWithOptionalTest,
+  bulkFillStudyMaterials,
+} from "@/lib/ai-admin.functions";
 
 const s = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 const sn = (v: FormDataEntryValue | null) => {
