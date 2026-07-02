@@ -463,7 +463,118 @@ function TestsAdmin() {
           </ul>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ----- AI Question Generator Panel ----- */
+function AIGenerateQuestionsPanel({
+  tests,
+}: {
+  tests: Array<{ id: string; name: string; exam_type?: string | null }>;
+}) {
+  const qc = useQueryClient();
+  const [testId, setTestId] = useState("");
+  const [topic, setTopic] = useState("");
+  const [subject, setSubject] = useState("");
+  const [count, setCount] = useState(50);
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [busy, setBusy] = useState(false);
+
+  const run = async () => {
+    if (!testId) return toast.error("Choose a mock test");
+    if (!topic.trim()) return toast.error("Enter a topic / subject");
+    setBusy(true);
+    const tId = toast.loading(`Generating ${count} AI questions…`);
+    try {
+      const res = await generateQuestionsForTest({
+        data: {
+          mockTestId: testId,
+          topic: topic.trim(),
+          subject: subject.trim() || undefined,
+          count,
+          difficulty,
+        },
+      });
+      toast.success(`Inserted ${res.inserted} questions`, { id: tId });
+      qc.invalidateQueries({ queryKey: ["questions", testId] });
+      qc.invalidateQueries({ queryKey: ["admin", "tests"] });
+      qc.invalidateQueries({ queryKey: ["mock_tests"] });
+    } catch (e) {
+      toast.error((e as Error).message, { id: tId });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <h3 className="font-semibold flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-[var(--khakhi-saffron-deep)]" /> Generate Questions with AI
+      </h3>
+      <div>
+        <Label>Target mock test</Label>
+        <select
+          className={selectCls}
+          value={testId}
+          onChange={(e) => setTestId(e.target.value)}
+        >
+          <option value="">Select a test…</option>
+          {tests.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name} {t.exam_type ? `· ${t.exam_type}` : ""}
+            </option>
+          ))}
+        </select>
       </div>
+      <div>
+        <Label>Topic / description</Label>
+        <Textarea
+          rows={2}
+          placeholder="e.g. Indian Constitution — Fundamental Rights & Duties"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <Label>Subject</Label>
+          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Polity" />
+        </div>
+        <div>
+          <Label>Count</Label>
+          <Input
+            type="number"
+            min={5}
+            max={50}
+            value={count}
+            onChange={(e) => setCount(Number(e.target.value) || 50)}
+          />
+        </div>
+        <div>
+          <Label>Difficulty</Label>
+          <select
+            className={selectCls}
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+      <Button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        className="bg-[var(--khakhi-saffron-deep)] text-white"
+      >
+        {busy ? "Generating…" : `Generate ${count} questions`}
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Uses Lovable AI (Gemini). Runs in the background — you can leave this page.
+      </p>
     </div>
   );
 }
