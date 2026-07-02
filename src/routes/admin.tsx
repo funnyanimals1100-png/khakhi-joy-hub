@@ -443,21 +443,26 @@ function TestsAdmin() {
         <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">{busy ? "Saving..." : "Create Test"}</Button>
       </form>
 
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="font-semibold mb-3">Existing</h3>
-        <ul className="divide-y divide-border max-h-[500px] overflow-auto">
-          {data?.map((t) => (
-            <li key={t.id} className="py-2 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm truncate">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.exam_type} {t.is_active ? "" : "· inactive"}</p>
-              </div>
-              <button onClick={() => remove(t.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="space-y-4">
+        <AIGenerateQuestionsPanel tests={data ?? []} />
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-semibold mb-3">Existing</h3>
+          <ul className="divide-y divide-border max-h-[420px] overflow-auto">
+            {data?.map((t) => (
+              <li key={t.id} className="py-2 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm truncate">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.exam_type} {t.is_active ? "" : "· inactive"}</p>
+                </div>
+                <button onClick={() => remove(t.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
       </div>
     </div>
   );
