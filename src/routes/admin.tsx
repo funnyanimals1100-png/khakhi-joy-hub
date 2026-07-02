@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Shield, Newspaper, BookOpen, ClipboardCheck, Trash2, Upload, Megaphone, Plus, X } from "lucide-react";
+import { Shield, Newspaper, BookOpen, ClipboardCheck, Trash2, Upload, Megaphone, Plus, X, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Shell, PageHeader, RequireAuth } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase, STORAGE_BUCKET, ADMIN_EMAIL } from "@/lib/supabase";
+import {
+  generateQuestionsForTest,
+  createMaterialWithOptionalTest,
+  bulkFillStudyMaterials,
+} from "@/lib/ai-admin.functions";
 
 const s = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 const sn = (v: FormDataEntryValue | null) => {
@@ -93,10 +98,11 @@ function NewsAdmin() {
         content: sn(fd.get("content")),
         category: s(fd.get("category")) || "general",
         exam_type: sn(fd.get("exam_type")),
+        apply_link: sn(fd.get("apply_link")),
         is_important: fd.get("is_important") === "on",
         is_new: true,
         published_date: new Date().toISOString(),
-      });
+      } as never);
       if (error) throw error;
       toast.success("News published");
       form.reset();
@@ -140,6 +146,11 @@ function NewsAdmin() {
         </div>
         <div><Label>Summary</Label><Input name="summary" /></div>
         <div><Label>Content</Label><Textarea name="content" rows={4} /></div>
+        <div>
+          <Label>Apply / Notification Link (OJAS URL)</Label>
+          <Input name="apply_link" type="url" placeholder="https://ojas.gujarat.gov.in/..." />
+          <p className="text-xs text-muted-foreground mt-1">If set, an "Apply Now" button will appear on the news detail page.</p>
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="is_important" /> Mark as important
         </label>
@@ -170,6 +181,7 @@ function NewsAdmin() {
 function MaterialsAdmin() {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [bulking, setBulking] = useState(false);
   const { data } = useQuery({
     queryKey: ["admin", "materials"],
     queryFn: async () => {
@@ -191,29 +203,51 @@ function MaterialsAdmin() {
       let file_size: number | null = null;
       if (file && file.size > 0) {
         const path = `${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-        const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
+        const { error: upErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(path, file, { upsert: false, contentType: file.type || undefined });
         if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-        file_url = pub.publicUrl;
+        // Bucket is private -> use a long-lived signed URL (10 years) for downloads
+        const { data: signed, error: signErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+        if (signErr) throw signErr;
+        file_url = signed.signedUrl;
         file_name = file.name;
         file_size = file.size;
       }
-      const { error } = await supabase.from("study_materials").insert({
-        title: s(fd.get("title")),
-        description: sn(fd.get("description")),
-        subject: sn(fd.get("subject")),
-        exam_type: sn(fd.get("exam_type")),
-        file_url,
-        file_name,
-        file_size,
-        is_premium: fd.get("is_premium") === "on",
-        order_index: Number(fd.get("order_index")) || 0,
+
+      const autoGen = fd.get("auto_generate_test") === "on";
+      const questionCount = Number(fd.get("question_count")) || 25;
+
+      const res = await createMaterialWithOptionalTest({
+        data: {
+          material: {
+            title: s(fd.get("title")),
+            description: sn(fd.get("description")),
+            subject: sn(fd.get("subject")),
+            exam_type: sn(fd.get("exam_type")),
+            file_url,
+            file_name,
+            file_size,
+            is_premium: fd.get("is_premium") === "on",
+            order_index: Number(fd.get("order_index")) || 0,
+          },
+          autoGenerateTest: autoGen,
+          questionCount,
+        },
       });
-      if (error) throw error;
-      toast.success("Material added");
+
+      if (res.mockTestId) {
+        toast.success(`Material added + ${res.insertedQuestions} AI questions generated`);
+      } else {
+        toast.success("Material added");
+      }
       form.reset();
       qc.invalidateQueries({ queryKey: ["admin", "materials"] });
+      qc.invalidateQueries({ queryKey: ["admin", "tests"] });
       qc.invalidateQueries({ queryKey: ["study_materials"] });
+      qc.invalidateQueries({ queryKey: ["mock_tests"] });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -226,6 +260,24 @@ function MaterialsAdmin() {
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     qc.invalidateQueries({ queryKey: ["admin", "materials"] });
+  };
+
+  const runBulkFill = async () => {
+    if (!confirm("Generate 8 study-material entries per subject × 3 exam types with AI? This can take 1–2 minutes.")) return;
+    setBulking(true);
+    const tId = toast.loading("Generating study materials with AI…");
+    try {
+      const res = await bulkFillStudyMaterials({
+        data: { perSubject: 8, examTypes: ["LRD", "PSI", "Constable"] },
+      });
+      toast.success(`Inserted ${res.inserted} study materials`, { id: tId });
+      qc.invalidateQueries({ queryKey: ["admin", "materials"] });
+      qc.invalidateQueries({ queryKey: ["study_materials"] });
+    } catch (err) {
+      toast.error((err as Error).message, { id: tId });
+    } finally {
+      setBulking(false);
+    }
   };
 
   return (
@@ -247,29 +299,61 @@ function MaterialsAdmin() {
         <div>
           <Label className="flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> File (PDF / Image)</Label>
           <Input name="file" type="file" accept=".pdf,image/*" />
-          <p className="text-xs text-muted-foreground mt-1">Bucket: <code>{STORAGE_BUCKET}</code></p>
+          <p className="text-xs text-muted-foreground mt-1">Bucket: <code>{STORAGE_BUCKET}</code> (private, served via signed URL)</p>
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="is_premium" /> Premium only
         </label>
-        <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">{busy ? "Uploading..." : "Add Material"}</Button>
+        <div className="rounded-lg border border-dashed border-[var(--khakhi-saffron)]/60 bg-[var(--khakhi-saffron)]/5 p-3 space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" name="auto_generate_test" />
+            <Sparkles className="h-4 w-4 text-[var(--khakhi-saffron-deep)]" />
+            Auto-generate a linked mock test with AI
+          </label>
+          <div className="flex items-center gap-2 text-xs">
+            <Label className="text-xs">Questions:</Label>
+            <Input name="question_count" type="number" defaultValue={25} min={5} max={50} className="h-7 w-20" />
+          </div>
+        </div>
+        <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">
+          {busy ? "Working…" : "Add Material"}
+        </Button>
       </form>
 
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="font-semibold mb-3">Existing</h3>
-        <ul className="divide-y divide-border max-h-[500px] overflow-auto">
-          {data?.map((m) => (
-            <li key={m.id} className="py-2 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm truncate">{m.title}</p>
-                <p className="text-xs text-muted-foreground">{m.subject} · {m.exam_type ?? "All"}</p>
-              </div>
-              <button onClick={() => remove(m.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-[var(--khakhi-saffron-deep)]" /> Bulk-fill with AI
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Generates 8 topics per subject (Gujarati, Maths, Reasoning, GK, English, Polity, History, Geography, Current Affairs) for LRD, PSI and Constable.
+          </p>
+          <Button
+            type="button"
+            onClick={runBulkFill}
+            disabled={bulking}
+            className="mt-3 bg-[var(--khakhi-saffron-deep)] text-white"
+          >
+            {bulking ? "Generating…" : "Generate study materials"}
+          </Button>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-semibold mb-3">Existing</h3>
+          <ul className="divide-y divide-border max-h-[420px] overflow-auto">
+            {data?.map((m) => (
+              <li key={m.id} className="py-2 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm truncate">{m.title}</p>
+                  <p className="text-xs text-muted-foreground">{m.subject} · {m.exam_type ?? "All"}</p>
+                </div>
+                <button onClick={() => remove(m.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -359,22 +443,138 @@ function TestsAdmin() {
         <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">{busy ? "Saving..." : "Create Test"}</Button>
       </form>
 
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="font-semibold mb-3">Existing</h3>
-        <ul className="divide-y divide-border max-h-[500px] overflow-auto">
-          {data?.map((t) => (
-            <li key={t.id} className="py-2 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm truncate">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.exam_type} {t.is_active ? "" : "· inactive"}</p>
-              </div>
-              <button onClick={() => remove(t.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="space-y-4">
+        <AIGenerateQuestionsPanel tests={data ?? []} />
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-semibold mb-3">Existing</h3>
+          <ul className="divide-y divide-border max-h-[420px] overflow-auto">
+            {data?.map((t) => (
+              <li key={t.id} className="py-2 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm truncate">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.exam_type} {t.is_active ? "" : "· inactive"}</p>
+                </div>
+                <button onClick={() => remove(t.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
+    </div>
+  );
+}
+
+/* ----- AI Question Generator Panel ----- */
+function AIGenerateQuestionsPanel({
+  tests,
+}: {
+  tests: Array<{ id: string; name: string; exam_type?: string | null }>;
+}) {
+  const qc = useQueryClient();
+  const [testId, setTestId] = useState("");
+  const [topic, setTopic] = useState("");
+  const [subject, setSubject] = useState("");
+  const [count, setCount] = useState(50);
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [busy, setBusy] = useState(false);
+
+  const run = async () => {
+    if (!testId) return toast.error("Choose a mock test");
+    if (!topic.trim()) return toast.error("Enter a topic / subject");
+    setBusy(true);
+    const tId = toast.loading(`Generating ${count} AI questions…`);
+    try {
+      const res = await generateQuestionsForTest({
+        data: {
+          mockTestId: testId,
+          topic: topic.trim(),
+          subject: subject.trim() || undefined,
+          count,
+          difficulty,
+        },
+      });
+      toast.success(`Inserted ${res.inserted} questions`, { id: tId });
+      qc.invalidateQueries({ queryKey: ["questions", testId] });
+      qc.invalidateQueries({ queryKey: ["admin", "tests"] });
+      qc.invalidateQueries({ queryKey: ["mock_tests"] });
+    } catch (e) {
+      toast.error((e as Error).message, { id: tId });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <h3 className="font-semibold flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-[var(--khakhi-saffron-deep)]" /> Generate Questions with AI
+      </h3>
+      <div>
+        <Label>Target mock test</Label>
+        <select
+          className={selectCls}
+          value={testId}
+          onChange={(e) => setTestId(e.target.value)}
+        >
+          <option value="">Select a test…</option>
+          {tests.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name} {t.exam_type ? `· ${t.exam_type}` : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <Label>Topic / description</Label>
+        <Textarea
+          rows={2}
+          placeholder="e.g. Indian Constitution — Fundamental Rights & Duties"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <Label>Subject</Label>
+          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Polity" />
+        </div>
+        <div>
+          <Label>Count</Label>
+          <Input
+            type="number"
+            min={5}
+            max={50}
+            value={count}
+            onChange={(e) => setCount(Number(e.target.value) || 50)}
+          />
+        </div>
+        <div>
+          <Label>Difficulty</Label>
+          <select
+            className={selectCls}
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+      <Button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        className="bg-[var(--khakhi-saffron-deep)] text-white"
+      >
+        {busy ? "Generating…" : `Generate ${count} questions`}
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Uses Lovable AI (Gemini). Runs in the background — you can leave this page.
+      </p>
     </div>
   );
 }
