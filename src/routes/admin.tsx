@@ -181,6 +181,7 @@ function NewsAdmin() {
 function MaterialsAdmin() {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [bulking, setBulking] = useState(false);
   const { data } = useQuery({
     queryKey: ["admin", "materials"],
     queryFn: async () => {
@@ -202,29 +203,51 @@ function MaterialsAdmin() {
       let file_size: number | null = null;
       if (file && file.size > 0) {
         const path = `${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-        const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
+        const { error: upErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(path, file, { upsert: false, contentType: file.type || undefined });
         if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-        file_url = pub.publicUrl;
+        // Bucket is private -> use a long-lived signed URL (10 years) for downloads
+        const { data: signed, error: signErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+        if (signErr) throw signErr;
+        file_url = signed.signedUrl;
         file_name = file.name;
         file_size = file.size;
       }
-      const { error } = await supabase.from("study_materials").insert({
-        title: s(fd.get("title")),
-        description: sn(fd.get("description")),
-        subject: sn(fd.get("subject")),
-        exam_type: sn(fd.get("exam_type")),
-        file_url,
-        file_name,
-        file_size,
-        is_premium: fd.get("is_premium") === "on",
-        order_index: Number(fd.get("order_index")) || 0,
+
+      const autoGen = fd.get("auto_generate_test") === "on";
+      const questionCount = Number(fd.get("question_count")) || 25;
+
+      const res = await createMaterialWithOptionalTest({
+        data: {
+          material: {
+            title: s(fd.get("title")),
+            description: sn(fd.get("description")),
+            subject: sn(fd.get("subject")),
+            exam_type: sn(fd.get("exam_type")),
+            file_url,
+            file_name,
+            file_size,
+            is_premium: fd.get("is_premium") === "on",
+            order_index: Number(fd.get("order_index")) || 0,
+          },
+          autoGenerateTest: autoGen,
+          questionCount,
+        },
       });
-      if (error) throw error;
-      toast.success("Material added");
+
+      if (res.mockTestId) {
+        toast.success(`Material added + ${res.insertedQuestions} AI questions generated`);
+      } else {
+        toast.success("Material added");
+      }
       form.reset();
       qc.invalidateQueries({ queryKey: ["admin", "materials"] });
+      qc.invalidateQueries({ queryKey: ["admin", "tests"] });
       qc.invalidateQueries({ queryKey: ["study_materials"] });
+      qc.invalidateQueries({ queryKey: ["mock_tests"] });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -237,6 +260,24 @@ function MaterialsAdmin() {
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     qc.invalidateQueries({ queryKey: ["admin", "materials"] });
+  };
+
+  const runBulkFill = async () => {
+    if (!confirm("Generate 8 study-material entries per subject × 3 exam types with AI? This can take 1–2 minutes.")) return;
+    setBulking(true);
+    const tId = toast.loading("Generating study materials with AI…");
+    try {
+      const res = await bulkFillStudyMaterials({
+        data: { perSubject: 8, examTypes: ["LRD", "PSI", "Constable"] },
+      });
+      toast.success(`Inserted ${res.inserted} study materials`, { id: tId });
+      qc.invalidateQueries({ queryKey: ["admin", "materials"] });
+      qc.invalidateQueries({ queryKey: ["study_materials"] });
+    } catch (err) {
+      toast.error((err as Error).message, { id: tId });
+    } finally {
+      setBulking(false);
+    }
   };
 
   return (
@@ -258,29 +299,61 @@ function MaterialsAdmin() {
         <div>
           <Label className="flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> File (PDF / Image)</Label>
           <Input name="file" type="file" accept=".pdf,image/*" />
-          <p className="text-xs text-muted-foreground mt-1">Bucket: <code>{STORAGE_BUCKET}</code></p>
+          <p className="text-xs text-muted-foreground mt-1">Bucket: <code>{STORAGE_BUCKET}</code> (private, served via signed URL)</p>
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="is_premium" /> Premium only
         </label>
-        <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">{busy ? "Uploading..." : "Add Material"}</Button>
+        <div className="rounded-lg border border-dashed border-[var(--khakhi-saffron)]/60 bg-[var(--khakhi-saffron)]/5 p-3 space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" name="auto_generate_test" />
+            <Sparkles className="h-4 w-4 text-[var(--khakhi-saffron-deep)]" />
+            Auto-generate a linked mock test with AI
+          </label>
+          <div className="flex items-center gap-2 text-xs">
+            <Label className="text-xs">Questions:</Label>
+            <Input name="question_count" type="number" defaultValue={25} min={5} max={50} className="h-7 w-20" />
+          </div>
+        </div>
+        <Button type="submit" disabled={busy} className="bg-[var(--khakhi-navy)] text-white">
+          {busy ? "Working…" : "Add Material"}
+        </Button>
       </form>
 
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="font-semibold mb-3">Existing</h3>
-        <ul className="divide-y divide-border max-h-[500px] overflow-auto">
-          {data?.map((m) => (
-            <li key={m.id} className="py-2 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm truncate">{m.title}</p>
-                <p className="text-xs text-muted-foreground">{m.subject} · {m.exam_type ?? "All"}</p>
-              </div>
-              <button onClick={() => remove(m.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Wand2 className="h-4 w-4 text-[var(--khakhi-saffron-deep)]" /> Bulk-fill with AI
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Generates 8 topics per subject (Gujarati, Maths, Reasoning, GK, English, Polity, History, Geography, Current Affairs) for LRD, PSI and Constable.
+          </p>
+          <Button
+            type="button"
+            onClick={runBulkFill}
+            disabled={bulking}
+            className="mt-3 bg-[var(--khakhi-saffron-deep)] text-white"
+          >
+            {bulking ? "Generating…" : "Generate study materials"}
+          </Button>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-semibold mb-3">Existing</h3>
+          <ul className="divide-y divide-border max-h-[420px] overflow-auto">
+            {data?.map((m) => (
+              <li key={m.id} className="py-2 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm truncate">{m.title}</p>
+                  <p className="text-xs text-muted-foreground">{m.subject} · {m.exam_type ?? "All"}</p>
+                </div>
+                <button onClick={() => remove(m.id)} className="text-destructive p-1 hover:bg-destructive/10 rounded">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
