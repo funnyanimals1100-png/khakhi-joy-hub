@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarDays, AlertCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, CalendarDays, AlertCircle, Sparkles, ExternalLink } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
 
@@ -71,6 +71,21 @@ function NewsDetail() {
             {data.content && (
               <div className="mt-4 text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
                 {data.content}
+              </div>
+            )}
+            {(data as { apply_link?: string | null }).apply_link && (
+              <div className="mt-6">
+                <a
+                  href={(data as { apply_link?: string | null }).apply_link!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-[var(--khakhi-saffron-deep)] text-white text-sm font-semibold px-5 py-2.5 hover:brightness-110"
+                >
+                  Apply Now <ExternalLink className="h-4 w-4" />
+                </a>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Opens the official application / notification page in a new tab.
+                </p>
               </div>
             )}
           </article>
