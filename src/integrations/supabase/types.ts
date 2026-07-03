@@ -299,6 +299,7 @@ export type Database = {
           exam_type: string | null
           id: string
           is_admin: boolean
+          is_premium: boolean
           name: string | null
           updated_at: string
         }
@@ -309,6 +310,7 @@ export type Database = {
           exam_type?: string | null
           id: string
           is_admin?: boolean
+          is_premium?: boolean
           name?: string | null
           updated_at?: string
         }
@@ -319,6 +321,7 @@ export type Database = {
           exam_type?: string | null
           id?: string
           is_admin?: boolean
+          is_premium?: boolean
           name?: string | null
           updated_at?: string
         }
@@ -326,10 +329,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      questions_public: {
+        Row: {
+          id: string | null
+          marks: number | null
+          mock_test_id: string | null
+          options: Json | null
+          order_index: number | null
+          question: string | null
+          subject: string | null
+        }
+        Insert: {
+          id?: string | null
+          marks?: number | null
+          mock_test_id?: string | null
+          options?: Json | null
+          order_index?: number | null
+          question?: string | null
+          subject?: string | null
+        }
+        Update: {
+          id?: string | null
+          marks?: number | null
+          mock_test_id?: string | null
+          options?: Json | null
+          order_index?: number | null
+          question?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_mock_test_id_fkey"
+            columns: ["mock_test_id"]
+            isOneToOne: false
+            referencedRelation: "mock_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      is_admin: { Args: { uid: string }; Returns: boolean }
+      submit_test: {
+        Args: {
+          p_answers: Json
+          p_mock_test_id: string
+          p_time_taken_seconds: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
