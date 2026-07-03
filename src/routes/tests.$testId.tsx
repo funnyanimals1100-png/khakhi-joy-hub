@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { supabase } from "@/lib/supabase";
@@ -11,15 +11,25 @@ export const Route = createFileRoute("/tests/$testId")({
   component: TestRunner,
 });
 
-type Question = {
+type SafeQuestion = {
   id: string;
   question: string;
   options: unknown;
+  subject: string | null;
+  marks: number | null;
+  order_index: number | null;
+};
+
+type ReviewQuestion = SafeQuestion & {
   correct_answer: number;
   explanation: string | null;
-  subject: string | null;
-  marks: number;
-  order_index: number;
+};
+
+type SubmitResult = {
+  result_id: string;
+  score: number;
+  total: number;
+  questions: ReviewQuestion[];
 };
 
 function parseOptions(raw: unknown): string[] {
@@ -47,15 +57,27 @@ function TestRunner() {
   });
 
   const questionsQ = useQuery({
-    queryKey: ["questions", testId],
+    queryKey: ["questions_public", testId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("questions")
-        .select("*")
+      // Safe view: no correct_answer / explanation exposed until submission.
+      const { data, error } = await (supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            eq: (col: string, val: string) => {
+              order: (
+                col: string,
+                opts: { ascending: boolean }
+              ) => Promise<{ data: SafeQuestion[] | null; error: unknown }>;
+            };
+          };
+        };
+      })
+        .from("questions_public")
+        .select("id, mock_test_id, question, options, subject, marks, order_index")
         .eq("mock_test_id", testId)
         .order("order_index", { ascending: true });
-      if (error) throw error;
-      return data as Question[];
+      if (error) throw error as Error;
+      return (data ?? []) as SafeQuestion[];
     },
   });
 
@@ -66,13 +88,11 @@ function TestRunner() {
   const [submitted, setSubmitted] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<SubmitResult | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const questions = questionsQ.data ?? [];
   const current = questions[idx];
-
-  const score = useMemo(() => {
-    return questions.reduce((acc, q) => (answers[q.id] === q.correct_answer ? acc + 1 : acc), 0);
-  }, [questions, answers]);
 
   // Timer
   useEffect(() => {
@@ -102,16 +122,27 @@ function TestRunner() {
   const handleSubmit = async () => {
     if (submitted) return;
     setSubmitted(true);
-    if (user) {
-      setSaving(true);
-      await supabase.from("test_results").insert({
-        user_id: user.id,
-        mock_test_id: testId,
-        score,
-        total_questions: questions.length,
-        time_taken_seconds: elapsed,
-        answers: answers as never,
+    setSubmitError(null);
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { data, error } = await (
+        supabase as unknown as {
+          rpc: (
+            name: string,
+            args: Record<string, unknown>
+          ) => Promise<{ data: SubmitResult | null; error: { message: string } | null }>;
+        }
+      ).rpc("submit_test", {
+        p_mock_test_id: testId,
+        p_answers: answers,
+        p_time_taken_seconds: elapsed,
       });
+      if (error) throw new Error(error.message);
+      setResult(data);
+    } catch (e) {
+      setSubmitError((e as Error).message);
+    } finally {
       setSaving(false);
     }
   };
@@ -182,17 +213,23 @@ function TestRunner() {
 
   // Result screen
   if (submitted) {
-    const pct = questions.length ? Math.round((score / questions.length) * 100) : 0;
+    const total = result?.total ?? questions.length;
+    const score = result?.score ?? 0;
+    const pct = total ? Math.round((score / total) * 100) : 0;
+    const reviewQs: ReviewQuestion[] = result?.questions ?? [];
     return (
       <Shell>
         <div className="mx-auto max-w-3xl px-4 py-10 space-y-6">
           <div className="rounded-xl border border-border bg-card p-6 text-center">
             <h1 className="text-2xl font-bold">Test Complete</h1>
             <div className="mt-4 text-5xl font-bold text-[var(--khakhi-saffron-deep)]">
-              {score}/{questions.length}
+              {score}/{total}
             </div>
             <p className="mt-1 text-muted-foreground">{pct}% · {fmt(elapsed)}</p>
             {saving && <p className="text-xs text-muted-foreground mt-2">Saving result…</p>}
+            {submitError && (
+              <p className="text-xs text-destructive mt-2">Could not save: {submitError}</p>
+            )}
             <div className="mt-6 flex gap-3 justify-center">
               <button
                 onClick={() => navigate({ to: "/tests" })}
@@ -203,56 +240,58 @@ function TestRunner() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h2 className="font-semibold">Review</h2>
-            {questions.map((q, i) => {
-              const opts = parseOptions(q.options);
-              const picked = answers[q.id];
-              const correct = picked === q.correct_answer;
-              return (
-                <div key={q.id} className="rounded-xl border border-border bg-card p-4">
-                  <div className="flex items-start gap-2">
-                    {correct ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex-1">
-                      <div className="text-xs text-muted-foreground">Q{i + 1}</div>
-                      <p className="font-medium">{q.question}</p>
-                      <ul className="mt-2 space-y-1 text-sm">
-                        {opts.map((o, oi) => {
-                          const isCorrect = oi === q.correct_answer;
-                          const isPicked = oi === picked;
-                          return (
-                            <li
-                              key={oi}
-                              className={`px-2 py-1 rounded ${
-                                isCorrect
-                                  ? "bg-green-100 dark:bg-green-900/30"
-                                  : isPicked
-                                    ? "bg-destructive/15"
-                                    : ""
-                              }`}
-                            >
-                              <span className="font-semibold mr-2">{String.fromCharCode(65 + oi)}.</span>
-                              {o}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      {q.explanation && (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          <span className="font-semibold">Explanation: </span>
-                          {q.explanation}
-                        </p>
+          {reviewQs.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="font-semibold">Review</h2>
+              {reviewQs.map((q, i) => {
+                const opts = parseOptions(q.options);
+                const picked = answers[q.id];
+                const correct = picked === q.correct_answer;
+                return (
+                  <div key={q.id} className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex items-start gap-2">
+                      {correct ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                       )}
+                      <div className="flex-1">
+                        <div className="text-xs text-muted-foreground">Q{i + 1}</div>
+                        <p className="font-medium">{q.question}</p>
+                        <ul className="mt-2 space-y-1 text-sm">
+                          {opts.map((o, oi) => {
+                            const isCorrect = oi === q.correct_answer;
+                            const isPicked = oi === picked;
+                            return (
+                              <li
+                                key={oi}
+                                className={`px-2 py-1 rounded ${
+                                  isCorrect
+                                    ? "bg-green-100 dark:bg-green-900/30"
+                                    : isPicked
+                                      ? "bg-destructive/15"
+                                      : ""
+                                }`}
+                              >
+                                <span className="font-semibold mr-2">{String.fromCharCode(65 + oi)}.</span>
+                                {o}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        {q.explanation && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            <span className="font-semibold">Explanation: </span>
+                            {q.explanation}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </Shell>
     );
